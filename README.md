@@ -366,10 +366,13 @@ where:
 **Table Entry:**
 
 $$
-\text{entry} = (\text{depth}, \text{score}, \text{best\_move}, \text{node\_type})
+\text{entry} = (\text{depth}, \text{score}, \text{best}*{\text{move}}, \text{node}*{\text{type}})
 $$
 
-where $\text{node\_type} \in \{\text{exact}, \text{lower\_bound}, \text{upper\_bound}\}$.
+where:
+
+$$\text{node}*{\text{type}} \in {\text{exact}, \text{lower}*{\text{bound}}, \text{upper}_{\text{bound}}}$$
+
 
 **Replacement Strategy:** Replace if new depth $\geq$ stored depth. Clear 20\% of oldest entries when table exceeds 200,000 entries.
 
