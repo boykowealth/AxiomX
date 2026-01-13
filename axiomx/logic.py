@@ -1,10 +1,3 @@
-"""
-Enhanced Game Logic with Move Count Tracking
-=============================================
-
-Tracks move count for opening evaluation in tensor engine.
-"""
-
 from engine import (
     copy_board, is_valid_move, would_be_in_check, 
     get_ai_move, get_all_valid_moves, is_in_check, evaluate_board

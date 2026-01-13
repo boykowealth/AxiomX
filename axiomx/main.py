@@ -6,7 +6,7 @@ import json
 from engine import initialize_board, is_in_check, evaluate_board
 from ui import (
     create_board_layout, create_evaluation_bar, 
-    create_move_list, create_promotion_modal
+    create_move_list, create_promotion_modal, create_gradient_visualization
 )
 from logic import handle_player_move, handle_ai_move, handle_promotion
 
@@ -102,12 +102,38 @@ app.layout = html.Div([
                             'paddingBottom': '5px'
                         }
                     ),
-                    html.Div(id='move-list-container', style={'flex': '1', 'overflowY': 'auto'})
+                    html.Div(
+                        id='move-list-container',
+                        style={
+                            'height': '200px',
+                            'overflowY': 'auto',
+                            'marginBottom': '15px'
+                        }
+                    )
                 ], style={
-                    'flex': '1',
                     'display': 'flex',
                     'flexDirection': 'column',
-                    'marginBottom': '20px'
+                    'marginBottom': '15px'
+                }),
+                
+                html.Div([
+                    html.Div(
+                        "POSITION GRADIENT",
+                        style={
+                            'color': '#ffffff',
+                            'fontFamily': 'Courier New, monospace',
+                            'fontSize': '14px',
+                            'fontWeight': 'bold',
+                            'marginBottom': '10px',
+                            'borderBottom': '1px solid #ffffff',
+                            'paddingBottom': '5px'
+                        }
+                    ),
+                    html.Div(id='gradient-visualization', style={'marginBottom': '15px'})
+                ], style={
+                    'display': 'flex',
+                    'flexDirection': 'column',
+                    'marginBottom': '15px'
                 }),
                 
                 html.Div([
@@ -210,7 +236,8 @@ app.layout = html.Div([
      Output('promotion-modal', 'is_open'),
      Output('evaluation-bar', 'children'),
      Output('move-list-container', 'children'),
-     Output('ai-move-interval', 'disabled')],  # NEW: Control interval
+     Output('gradient-visualization', 'children'),  # NEW: Gradient viz
+     Output('ai-move-interval', 'disabled')],  # Control interval
     [Input({'type': 'square', 'row': dash.dependencies.ALL, 'col': dash.dependencies.ALL}, 'n_clicks'),
      Input('reset-button', 'n_clicks'),
      Input('player-color', 'value'),
@@ -250,7 +277,8 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
                 status += " [CHECK!]"
             eval_bar = create_evaluation_bar(game_state['evaluation'])
             move_list = create_move_list(game_state['move_history'])
-            return board_layout_wrapper, game_state, status, False, eval_bar, move_list, True  # Disable interval
+            gradient_viz = create_gradient_visualization(game_state['board'])
+            return board_layout_wrapper, game_state, status, False, eval_bar, move_list, gradient_viz, True  # Disable interval
     
     if player_color and player_color != game_state.get('player_color', 'white'):
         game_state['player_color'] = player_color
@@ -264,7 +292,8 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
             status = "> AI THINKING..."
             eval_bar = create_evaluation_bar(game_state['evaluation'])
             move_list = create_move_list(game_state['move_history'])
-            return board_layout_wrapper, game_state, status, False, eval_bar, move_list, False  # Enable interval
+            gradient_viz = create_gradient_visualization(game_state['board'])
+            return board_layout_wrapper, game_state, status, False, eval_bar, move_list, gradient_viz, False  # Enable interval
     
     if not ctx.triggered:
         board_layout_wrapper = html.Div(
@@ -280,7 +309,8 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
         status = f"> {game_state['current_player'].upper()}'S TURN"
         eval_bar = create_evaluation_bar(game_state['evaluation'])
         move_list = create_move_list(game_state['move_history'])
-        return board_layout_wrapper, game_state, status, False, eval_bar, move_list, True  # Disable interval
+        gradient_viz = create_gradient_visualization(game_state['board'])
+        return board_layout_wrapper, game_state, status, False, eval_bar, move_list, gradient_viz, True  # Disable interval
     
     trigger_id = ctx.triggered[0]['prop_id']
     
@@ -306,7 +336,8 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
             status = "> AI THINKING..."
             eval_bar = create_evaluation_bar(game_state['evaluation'])
             move_list = create_move_list(game_state['move_history'])
-            return board_layout_wrapper, game_state, status, False, eval_bar, move_list, False  # Enable interval
+            gradient_viz = create_gradient_visualization(game_state['board'])
+            return board_layout_wrapper, game_state, status, False, eval_bar, move_list, gradient_viz, False  # Enable interval
     
     if 'reset-button' in trigger_id:
         player_color = game_state.get('player_color', 'white')
@@ -336,12 +367,14 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
             status = "> AI THINKING..."
             eval_bar = create_evaluation_bar(new_state['evaluation'])
             move_list = create_move_list(new_state['move_history'])
-            return board_layout_wrapper, new_state, status, False, eval_bar, move_list, False  # Enable interval
+            gradient_viz = create_gradient_visualization(new_state['board'])
+            return board_layout_wrapper, new_state, status, False, eval_bar, move_list, gradient_viz, False  # Enable interval
         else:
             status = f"> {new_state['current_player'].upper()}'S TURN"
             eval_bar = create_evaluation_bar(new_state['evaluation'])
             move_list = create_move_list(new_state['move_history'])
-            return board_layout_wrapper, new_state, status, False, eval_bar, move_list, True  # Disable interval
+            gradient_viz = create_gradient_visualization(new_state['board'])
+            return board_layout_wrapper, new_state, status, False, eval_bar, move_list, gradient_viz, True  # Disable interval
     
     player_color = game_state.get('player_color', 'white')
     ai_color = 'black' if player_color == 'white' else 'white'
@@ -358,7 +391,27 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
         status = game_state['game_over'] if game_state['game_over'] else f"> {game_state['current_player'].upper()}'S TURN"
         eval_bar = create_evaluation_bar(game_state['evaluation'])
         move_list = create_move_list(game_state['move_history'])
-        return board_layout_wrapper, game_state, status, game_state['pending_promotion'] is not None, eval_bar, move_list, True  # Disable interval
+        gradient_viz = create_gradient_visualization(game_state['board'])
+        return board_layout_wrapper, game_state, status, game_state['pending_promotion'] is not None, eval_bar, move_list, gradient_viz, True  # Disable interval
+    
+    # Only parse JSON if this is a square click (not ai-interval or other triggers)
+    if 'square' not in trigger_id:
+        # Not a square click, just refresh the display
+        board_layout_wrapper = html.Div(
+            create_board_layout(
+                game_state['board'],
+                tuple(game_state['selected']) if game_state['selected'] else None,
+                [tuple(m) for m in game_state['valid_moves']]
+            ),
+            style={'position': 'absolute', 'top': 0, 'left': 0, 'right': 0, 'bottom': 0}
+        )
+        status = game_state['game_over'] if game_state['game_over'] else f"> {game_state['current_player'].upper()}'S TURN"
+        if not game_state['game_over'] and is_in_check(game_state['board'], game_state['current_player']):
+            status += " [CHECK!]"
+        eval_bar = create_evaluation_bar(game_state['evaluation'])
+        move_list = create_move_list(game_state['move_history'])
+        gradient_viz = create_gradient_visualization(game_state['board'])
+        return board_layout_wrapper, game_state, status, False, eval_bar, move_list, gradient_viz, True
     
     trigger_dict = json.loads(trigger_id.split('.')[0])
     clicked_row, clicked_col = trigger_dict['row'], trigger_dict['col']
@@ -372,7 +425,8 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
         )
         eval_bar = create_evaluation_bar(game_state['evaluation'])
         move_list = create_move_list(game_state['move_history'])
-        return board_layout_wrapper, game_state, "> SELECT PROMOTION", True, eval_bar, move_list, True  # Disable interval
+        gradient_viz = create_gradient_visualization(game_state['board'])
+        return board_layout_wrapper, game_state, "> SELECT PROMOTION", True, eval_bar, move_list, gradient_viz, True  # Disable interval
     
     # Check if it's now AI's turn
     if game_state['current_player'] == ai_color:
@@ -387,7 +441,8 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
         status = "> AI THINKING..."
         eval_bar = create_evaluation_bar(game_state['evaluation'])
         move_list = create_move_list(game_state['move_history'])
-        return board_layout_wrapper, game_state, status, False, eval_bar, move_list, False  # Enable interval for AI
+        gradient_viz = create_gradient_visualization(game_state['board'])
+        return board_layout_wrapper, game_state, status, False, eval_bar, move_list, gradient_viz, False  # Enable interval for AI
     
     # Player's turn still
     board_layout_wrapper = html.Div(
@@ -404,8 +459,9 @@ def handle_click(square_clicks, reset_clicks, player_color, promote_queen, promo
     
     eval_bar = create_evaluation_bar(game_state['evaluation'])
     move_list = create_move_list(game_state['move_history'])
+    gradient_viz = create_gradient_visualization(game_state['board'])
     
-    return board_layout_wrapper, game_state, status, False, eval_bar, move_list, True  # Disable interval
+    return board_layout_wrapper, game_state, status, False, eval_bar, move_list, gradient_viz, True  # Disable interval
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8050)

@@ -221,8 +221,6 @@ def create_move_list(moves):
     return html.Div(
         move_pairs,
         style={
-            'height': '100%',
-            'overflowY': 'auto',
             'padding': '10px'
         }
     )
@@ -298,3 +296,100 @@ def create_promotion_modal():
     ], id='promotion-modal', is_open=False, centered=True, style={
         'fontFamily': 'Courier New, monospace'
     })
+
+def create_gradient_visualization(board):
+    """
+    Create terminal-style gradient visualization.
+    
+    Computes control gradient and displays as ASCII-art grid.
+    Green = White advantage, Red = Black advantage, Grey = Neutral
+    """
+    try:
+        from tensor_engine import TensorChessEngine
+        
+        engine = TensorChessEngine()
+        tensor = engine.board_to_tensor(board)
+        control_field, _ = engine.compute_control_gradient(tensor)
+        
+        squares = []
+        for row in range(8):
+            for col in range(8):
+                value = control_field[row, col]
+                
+                normalized = max(-1, min(1, value / 50.0))
+                
+                if normalized > 0.3:
+                    intensity = int(min(255, 100 + normalized * 155))
+                    bg_color = f'rgb(0, {intensity}, 0)'
+                    symbol = '+'
+                elif normalized < -0.3:
+                    intensity = int(min(255, 100 + abs(normalized) * 155))
+                    bg_color = f'rgb({intensity}, 0, 0)'
+                    symbol = '-'
+                else:
+                    bg_color = '#333333'
+                    symbol = '·'
+                
+                square = html.Div(
+                    symbol,
+                    style={
+                        'width': '100%',
+                        'height': '100%',
+                        'backgroundColor': bg_color,
+                        'display': 'flex',
+                        'alignItems': 'center',
+                        'justifyContent': 'center',
+                        'fontSize': '10px',
+                        'color': '#ffffff',
+                        'fontFamily': 'Courier New, monospace',
+                        'fontWeight': 'bold',
+                        'border': '1px solid #000000'
+                    }
+                )
+                squares.append(square)
+        
+        grid = html.Div(
+            squares,
+            style={
+                'display': 'grid',
+                'gridTemplateColumns': 'repeat(8, 1fr)',
+                'gridTemplateRows': 'repeat(8, 1fr)',
+                'width': '100%',
+                'aspectRatio': '1',
+                'border': '1px solid #ffffff',
+                'maxWidth': '200px'
+            }
+        )
+        
+        legend = html.Div([
+            html.Div([
+                html.Span('+ ', style={'color': '#00ff00', 'marginRight': '5px'}),
+                html.Span('WHITE ADVANTAGE', style={'fontSize': '10px'})
+            ], style={'marginBottom': '3px'}),
+            html.Div([
+                html.Span('· ', style={'color': '#ffffff', 'marginRight': '5px'}),
+                html.Span('NEUTRAL', style={'fontSize': '10px'})
+            ], style={'marginBottom': '3px'}),
+            html.Div([
+                html.Span('- ', style={'color': '#ff0000', 'marginRight': '5px'}),
+                html.Span('BLACK ADVANTAGE', style={'fontSize': '10px'})
+            ])
+        ], style={
+            'color': '#ffffff',
+            'fontFamily': 'Courier New, monospace',
+            'fontSize': '10px',
+            'marginTop': '10px'
+        })
+        
+        return html.Div([grid, legend])
+        
+    except Exception as e:
+        return html.Div(
+            f"[Gradient unavailable]",
+            style={
+                'color': '#666666',
+                'fontFamily': 'Courier New, monospace',
+                'fontSize': '12px',
+                'fontStyle': 'italic'
+            }
+        )

@@ -547,11 +547,9 @@ class TensorChessEngine:
                     if not np.any(white_pawns[row+1:, max(0, col-1):min(8, col+2)]):
                         score += 30 * (row - 1)
         
-        # Piece coordination (pieces on strong control squares)
-        white_pieces = tensor[:, :, 1:6].sum(axis=2)  # Knights through king (not pawns)
+        white_pieces = tensor[:, :, 1:6].sum(axis=2) 
         black_pieces = tensor[:, :, 7:12].sum(axis=2)
         
-        # Pieces on squares with positive control
         score -= np.sum(white_pieces * np.maximum(control_field, 0)) * 5
         score += np.sum(black_pieces * np.maximum(-control_field, 0)) * 5
         
